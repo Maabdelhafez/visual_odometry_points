@@ -72,8 +72,8 @@ int main(int argc, char **argv) {
     std::vector<KeyPoint> keypoints_1;
     std::vector<KeyPoint> keypoints_2;
     std::vector<DMatch> matches;
-
-    Mat depthMap =  generateDepthMap(j);
+    cout << "gen depth map of frm:" << j-1 << endl;
+    Mat depthMap =  generateDepthMap(j-1);
 
   //-- read the image
   
@@ -81,6 +81,7 @@ int main(int argc, char **argv) {
     Mat img_2 = imread(fn3[j], CV_LOAD_IMAGE_GRAYSCALE);
     assert(img_1.data != nullptr && img_2.data != nullptr);
     cout <<"Doing Feature match:" <<fn3[j-1] << ", " << fn3[j] << endl;
+    cout << "Feature match frm:" << j-1 <<", " << j << endl;
     j++;
     // find features and match them
     find_feature_matches(img_1, img_2, keypoints_1, keypoints_2, matches);
@@ -88,30 +89,47 @@ int main(int argc, char **argv) {
     vector<Point3f> pts_3d;
     vector<Point2f> pts_2d;
     cout << "Found matches:" << matches.size() << endl;  
+    cout << "depth:";
     for (DMatch m:matches) {
       auto& kp1 = keypoints_1[m.queryIdx].pt;
       auto& kp2 = keypoints_2[m.trainIdx].pt;
-      ushort d = depthMap.ptr<unsigned short>(int(kp1.y))[int(kp1.x)]; 
+      auto& kpd = kp1; // ori
+    //  auto& kpd = kp2;
+      ushort d = depthMap.ptr<unsigned short>(int(kpd.y))[int(kpd.x)]; 
       
       if (d == 0)   // bad depth
         continue;
       float dd = d / 5000.0; 
+      cout << dd << ", ";
       Point2d p1 = pixel2cam(kp1, K);
       pts_3d.push_back(Point3f((p1.x) * dd, (p1.y) * dd, dd));
       pts_2d.push_back(kp2);
     }
+    cout << endl;
     //-----
     int N = pts_3d.size();
     cout << "Found good depth: " << N << endl;
     if(N<6)
       continue;
 
-    Mat r, R;
-    Vec3f t ;
+    Mat R;
+//    Vec3f t ;
     chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+    cout << "solvePnPRansac()" << endl;
+//    solvePnP(pts_3d, pts_2d, K, Mat(), r, t, false); //  Call OpenCV's PnP solution, choose EPNP , DLS and other methods-->ex: ADD ,SOLVEPNP_EPNP after false
 
-    solvePnP(pts_3d, pts_2d, K, Mat(), r, t, false); //  Call OpenCV's PnP solution, choose EPNP , DLS and other methods-->ex: ADD ,SOLVEPNP_EPNP after false
-    
+  cv::Mat r(3,1,cv::DataType<double>::type);
+  cv::Mat t(3,1,cv::DataType<double>::type);
+ 
+  cv::solvePnPRansac(pts_3d, pts_2d, K, Mat(), r, t);
+ 
+    Mat ot; // outliers
+    cv::Mat D;
+
+    //solvePnPRansac(pts_3d, pts_2d, K, D, r, t, false, 100, 8.0, 0.99); 
+    cout << "Outliers:(" << ot.rows << ","<< ot.cols << ") of " << pts_2d.size()<<endl;
+    cout << "Relative motion: r=" << r << ", ";
+    cout << "t=" << t << endl; // delt t, delta R
     cv::Rodrigues(r, R); // r is in the form of a rotation vector, converted to a matrix using the Rodrigues formula 
     // Possible: T = [ R' | t'] = [ RT | -Rt]
     // t1 = -R.transpose()*t;
@@ -119,7 +137,7 @@ int main(int argc, char **argv) {
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
   
-    pointsTranslationVector = pointsTranslationVector + t ;
+    //pointsTranslationVector = pointsTranslationVector + t ;
 
     cout << "Translation total =" << endl << pointsTranslationVector << endl;
   // lop++;
@@ -202,6 +220,7 @@ Mat generateDepthMap(int j) {
   cv::glob("seq/image_0", fn0);
   cv::glob("seq/image_1", fn1);
 
+  cout <<"Depth map of frm :" << j << ", with" << fn0[j] << ", " << fn1[j] << endl;
    Mat imgDp_1, imgDp_2;
    
     imgDp_1 = imread(fn0[j], CV_LOAD_IMAGE_GRAYSCALE);
@@ -213,7 +232,8 @@ Mat generateDepthMap(int j) {
     cv::Mat disparity_sgbm, disparity, disparityMap;
     sgbm->compute(imgDp_1, imgDp_2, disparity_sgbm);
     disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);
-    disparityMap = disparity/96.0; // 16.0 ;
+ //   disparityMap = disparity/96.0; // 16.0 ;
+    disparityMap = disparity/40.0; // 16.0 ;
   cv::namedWindow("Disparity", cv::WINDOW_KEEPRATIO);
   cv::imshow("Disparity", disparityMap );
   cv::resizeWindow("Disparity", 800,300);
