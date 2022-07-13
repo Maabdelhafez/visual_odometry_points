@@ -2,7 +2,10 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/imgproc.hpp>
+#include<opencv2/opencv.hpp>
 #include <Eigen/Core>
 /*
 #include <g2o/core/base_vertex.h>
@@ -20,6 +23,7 @@
 #include <unistd.h>
 #include <vector>
 #include <string>
+#include <iomanip>
 //#include <pangolin/pangolin.h>
 
 
@@ -88,6 +92,7 @@ int main(int argc, char **argv) {
     Mat K = (Mat_<double>(3, 3) << 718.856, 0, 607.1928, 0, 718.856, 185.2157, 0, 0, 1);
     vector<Point3f> pts_3d;
     vector<Point2f> pts_2d;
+    vector<double> dds;
     cout << "Found matches:" << matches.size() << endl;  
     cout << "depth:";
     for (DMatch m:matches) {
@@ -100,7 +105,8 @@ int main(int argc, char **argv) {
       if (d == 0)   // bad depth
         continue;
       float dd = d / 5000.0; 
-      cout << dd << ", ";
+      cout << dd << ", "; 
+      dds.push_back(dd);
       Point2d p1 = pixel2cam(kp1, K);
       pts_3d.push_back(Point3f((p1.x) * dd, (p1.y) * dd, dd));
       pts_2d.push_back(kp2);
@@ -141,8 +147,23 @@ int main(int argc, char **argv) {
 
     cout << "Translation total =" << endl << pointsTranslationVector << endl;
   // lop++;
+    //---- draw depth pnts
+    Mat imd = img_2;
+    for(int i=0;i<dds.size();i++)
+    {
+      Point2f q = pts_2d[i];
+      float d = dds[i];
+      stringstream s;
+      s << std::setprecision(2)<<d;
+      cv::putText(imd, s.str(), q,FONT_HERSHEY_COMPLEX, 1,{255,0,0}, 2);//Putting the text in the matrix//
+    }
+    //cvtcolor(imd,cv::COLOR_BGR2GRAY);
+    cv::namedWindow("dbg1", cv::WINDOW_KEEPRATIO);
+    imshow("dbg1", imd);
+   // resizeWindow("dbg1", 1200,400);
 
   }
+  
   return 0;
 }
 //-------------
@@ -232,8 +253,8 @@ Mat generateDepthMap(int j) {
     cv::Mat disparity_sgbm, disparity, disparityMap;
     sgbm->compute(imgDp_1, imgDp_2, disparity_sgbm);
     disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);
- //   disparityMap = disparity/96.0; // 16.0 ;
-    disparityMap = disparity/40.0; // 16.0 ;
+    disparityMap = disparity/96.0; // 16.0 ;
+ //   disparityMap = disparity/40.0; // 16.0 ;
   cv::namedWindow("Disparity", cv::WINDOW_KEEPRATIO);
   cv::imshow("Disparity", disparityMap );
   cv::resizeWindow("Disparity", 800,300);
