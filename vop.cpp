@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     Mat img_2 = imread(fn3[j], CV_LOAD_IMAGE_GRAYSCALE);
     assert(img_1.data != nullptr && img_2.data != nullptr);
     cout <<"Doing Feature match:" <<fn3[j-1] << ", " << fn3[j] << endl;
-
+    j++;
     // find features and match them
     find_feature_matches(img_1, img_2, keypoints_1, keypoints_2, matches);
     Mat K = (Mat_<double>(3, 3) << 718.856, 0, 607.1928, 0, 718.856, 185.2157, 0, 0, 1);
@@ -120,7 +120,6 @@ int main(int argc, char **argv) {
 
     cout << "Translation total =" << endl << pointsTranslationVector << endl;
   // lop++;
-    j++ ; 
 
   }
   return 0;
