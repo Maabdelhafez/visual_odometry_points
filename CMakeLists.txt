@@ -12,6 +12,6 @@ include_directories( ${Sophus_INCLUDE_DIRS} )
 include_directories( dep/sophus/include )
 
 FILE(GLOB  SRC_ALL *.cpp)
-add_executable(test ${SRC_ALL})
-target_link_libraries(test   ${OpenCV_LIBRARIES} ${Sophus_LIBRARIES})
+add_executable(vo ${SRC_ALL})
+target_link_libraries(vo   ${OpenCV_LIBRARIES} ${Sophus_LIBRARIES})
 
