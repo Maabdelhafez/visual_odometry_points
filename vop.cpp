@@ -37,9 +37,6 @@ Vec3f  pointsTranslationVector = 0.0  ;
 
 
 int f= 1 ; int j = 1, lop=0; 
- std::vector<KeyPoint> keypoints_1;
- std::vector<KeyPoint> keypoints_2;
- std::vector<DMatch> matches;
 
 
 void find_feature_matches(
@@ -72,7 +69,10 @@ int main(int argc, char **argv) {
    cv::glob("seq/image_0", fn3);
 
 while (lop<fn3.size()) {
-  
+   std::vector<KeyPoint> keypoints_1;
+   std::vector<KeyPoint> keypoints_2;
+   std::vector<DMatch> matches;
+
   Mat depthMap =  generateDepthMap();
 
 //-- read the image
@@ -100,7 +100,11 @@ while (lop<fn3.size()) {
     pts_3d.push_back(Point3f((p1.x) * dd, (p1.y) * dd, dd));
     pts_2d.push_back(keypoints_2[m.trainIdx].pt);
   }
-
+  //-----
+  int N = pts_3d.size();
+  cout << "Found good depth: " << N << endl;
+  if(N<6)
+    continue;
 
   Mat r, R;
   Vec3f t ;
