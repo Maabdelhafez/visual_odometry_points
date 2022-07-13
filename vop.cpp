@@ -69,7 +69,7 @@ Mat generateDepthMap(void);
 
 int main(int argc, char **argv) {
 
-   cv::glob("/home/ali/Videos/data_odometry_gray/dataset/sequences/00/image_0", fn3);
+   cv::glob("seq/image_0", fn3);
 
 while (lop<fn3.size()) {
   
@@ -81,14 +81,14 @@ while (lop<fn3.size()) {
   Mat img_2 = imread(fn3[j], CV_LOAD_IMAGE_GRAYSCALE);
   assert(img_1.data != nullptr && img_2.data != nullptr);
   j++ ; 
-
+  cout <<"Doing Feature match:" <<fn3[j-1] << ", " << fn3[j] << endl;
 
 // find features and match them
  find_feature_matches(img_1, img_2, keypoints_1, keypoints_2, matches);
  Mat K = (Mat_<double>(3, 3) << 718.856, 0, 607.1928, 0, 718.856, 185.2157, 0, 0, 1);
   vector<Point3f> pts_3d;
   vector<Point2f> pts_2d;
-
+   cout << "Found matches:" << matches.size() << endl;  
   for (DMatch m:matches) {
 
     ushort d = depthMap.ptr<unsigned short>(int(keypoints_1[m.queryIdx].pt.y))[int(keypoints_1[m.queryIdx].pt.x)]; 
@@ -100,6 +100,7 @@ while (lop<fn3.size()) {
     pts_3d.push_back(Point3f((p1.x) * dd, (p1.y) * dd, dd));
     pts_2d.push_back(keypoints_2[m.trainIdx].pt);
   }
+
 
   Mat r, R;
   Vec3f t ;
@@ -189,8 +190,8 @@ Mat generateDepthMap(void) {
   float fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157; // dim in pixels
   float b = 0.573; // in meters
 
-  cv::glob("/home/ali/Videos/data_odometry_gray/dataset/sequences/00/image_0", fn0);
-  cv::glob("/home/ali/Videos/data_odometry_gray/dataset/sequences/00/image_1", fn1);
+  cv::glob("seq/image_0", fn0);
+  cv::glob("seq/image_1", fn1);
 
    Mat imgDp_1, imgDp_2;
    

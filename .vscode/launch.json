@@ -5,13 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "vo",
+            "name": "vo test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/vo",
-            "args": [],
+            "program": "${command:cmake.launchTargetPath}",            "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}/rundir/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
