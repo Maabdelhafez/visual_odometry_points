@@ -113,6 +113,9 @@ int main(int argc, char **argv) {
     solvePnP(pts_3d, pts_2d, K, Mat(), r, t, false); //  Call OpenCV's PnP solution, choose EPNP , DLS and other methods-->ex: ADD ,SOLVEPNP_EPNP after false
     
     cv::Rodrigues(r, R); // r is in the form of a rotation vector, converted to a matrix using the Rodrigues formula 
+    // Possible: T = [ R' | t'] = [ RT | -Rt]
+    // t1 = -R.transpose()*t;
+    // R1 = R.transpose();
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
   
