@@ -67,60 +67,61 @@ Mat generateDepthMap(int j);
 int main(int argc, char **argv) {
 
    cv::glob("seq/image_0", fn3);
-int j=1; // frm num
-while (j<fn3.size()) {
-   std::vector<KeyPoint> keypoints_1;
-   std::vector<KeyPoint> keypoints_2;
-   std::vector<DMatch> matches;
+  int j=1; // frm num
+  while (j<fn3.size()) {
+    std::vector<KeyPoint> keypoints_1;
+    std::vector<KeyPoint> keypoints_2;
+    std::vector<DMatch> matches;
 
-  Mat depthMap =  generateDepthMap(j);
+    Mat depthMap =  generateDepthMap(j);
 
-//-- read the image
- 
-  Mat img_1 = imread(fn3[j-1], CV_LOAD_IMAGE_GRAYSCALE);
-  Mat img_2 = imread(fn3[j], CV_LOAD_IMAGE_GRAYSCALE);
-  assert(img_1.data != nullptr && img_2.data != nullptr);
-  cout <<"Doing Feature match:" <<fn3[j-1] << ", " << fn3[j] << endl;
-  j++ ; 
-
-// find features and match them
- find_feature_matches(img_1, img_2, keypoints_1, keypoints_2, matches);
- Mat K = (Mat_<double>(3, 3) << 718.856, 0, 607.1928, 0, 718.856, 185.2157, 0, 0, 1);
-  vector<Point3f> pts_3d;
-  vector<Point2f> pts_2d;
-   cout << "Found matches:" << matches.size() << endl;  
-  for (DMatch m:matches) {
-
-    ushort d = depthMap.ptr<unsigned short>(int(keypoints_1[m.queryIdx].pt.y))[int(keypoints_1[m.queryIdx].pt.x)]; 
-    
-    if (d == 0)   // bad depth
-      continue;
-    float dd = d / 5000.0; 
-    Point2d p1 = pixel2cam(keypoints_1[m.queryIdx].pt, K);
-    pts_3d.push_back(Point3f((p1.x) * dd, (p1.y) * dd, dd));
-    pts_2d.push_back(keypoints_2[m.trainIdx].pt);
-  }
-  //-----
-  int N = pts_3d.size();
-  cout << "Found good depth: " << N << endl;
-  if(N<6)
-    continue;
-
-  Mat r, R;
-  Vec3f t ;
-  chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
-
-  solvePnP(pts_3d, pts_2d, K, Mat(), r, t, false); //  Call OpenCV's PnP solution, choose EPNP , DLS and other methods-->ex: ADD ,SOLVEPNP_EPNP after false
+  //-- read the image
   
-  cv::Rodrigues(r, R); // r is in the form of a rotation vector, converted to a matrix using the Rodrigues formula 
-  chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
-  chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
- 
-  pointsTranslationVector = pointsTranslationVector + t ;
+    Mat img_1 = imread(fn3[j-1], CV_LOAD_IMAGE_GRAYSCALE);
+    Mat img_2 = imread(fn3[j], CV_LOAD_IMAGE_GRAYSCALE);
+    assert(img_1.data != nullptr && img_2.data != nullptr);
+    cout <<"Doing Feature match:" <<fn3[j-1] << ", " << fn3[j] << endl;
 
-  cout << "Translation total =" << endl << pointsTranslationVector << endl;
- // lop++;
- }
+    // find features and match them
+    find_feature_matches(img_1, img_2, keypoints_1, keypoints_2, matches);
+    Mat K = (Mat_<double>(3, 3) << 718.856, 0, 607.1928, 0, 718.856, 185.2157, 0, 0, 1);
+    vector<Point3f> pts_3d;
+    vector<Point2f> pts_2d;
+    cout << "Found matches:" << matches.size() << endl;  
+    for (DMatch m:matches) {
+
+      ushort d = depthMap.ptr<unsigned short>(int(keypoints_1[m.queryIdx].pt.y))[int(keypoints_1[m.queryIdx].pt.x)]; 
+      
+      if (d == 0)   // bad depth
+        continue;
+      float dd = d / 5000.0; 
+      Point2d p1 = pixel2cam(keypoints_1[m.queryIdx].pt, K);
+      pts_3d.push_back(Point3f((p1.x) * dd, (p1.y) * dd, dd));
+      pts_2d.push_back(keypoints_2[m.trainIdx].pt);
+    }
+    //-----
+    int N = pts_3d.size();
+    cout << "Found good depth: " << N << endl;
+    if(N<6)
+      continue;
+
+    Mat r, R;
+    Vec3f t ;
+    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+
+    solvePnP(pts_3d, pts_2d, K, Mat(), r, t, false); //  Call OpenCV's PnP solution, choose EPNP , DLS and other methods-->ex: ADD ,SOLVEPNP_EPNP after false
+    
+    cv::Rodrigues(r, R); // r is in the form of a rotation vector, converted to a matrix using the Rodrigues formula 
+    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
+    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
+  
+    pointsTranslationVector = pointsTranslationVector + t ;
+
+    cout << "Translation total =" << endl << pointsTranslationVector << endl;
+  // lop++;
+    j++ ; 
+
+  }
   return 0;
 }
 
