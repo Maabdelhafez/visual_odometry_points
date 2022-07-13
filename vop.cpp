@@ -36,7 +36,7 @@ Vec3f  pointsTranslationVector = 0.0  ;
 
 
 
-int f= 1 ; int j = 1, lop=0; 
+//int f= 1 ; int j = 1, lop=0; 
 
 
 void find_feature_matches(
@@ -57,7 +57,7 @@ typedef vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VecVe
 // BA by gauss-newton
 //void bundleAdjustmentGaussNewton(const VecVector3d &points_3d, const VecVector2d &points_2d, const Mat &K, Sophus::SE3d &pose);
 
-Mat generateDepthMap(void);
+Mat generateDepthMap(int j);
 
 
 //----------------------------------------------------------MAIN-------------------------------------------------//
@@ -67,21 +67,21 @@ Mat generateDepthMap(void);
 int main(int argc, char **argv) {
 
    cv::glob("seq/image_0", fn3);
-
-while (lop<fn3.size()) {
+int j=1; // frm num
+while (j<fn3.size()) {
    std::vector<KeyPoint> keypoints_1;
    std::vector<KeyPoint> keypoints_2;
    std::vector<DMatch> matches;
 
-  Mat depthMap =  generateDepthMap();
+  Mat depthMap =  generateDepthMap(j);
 
 //-- read the image
  
   Mat img_1 = imread(fn3[j-1], CV_LOAD_IMAGE_GRAYSCALE);
   Mat img_2 = imread(fn3[j], CV_LOAD_IMAGE_GRAYSCALE);
   assert(img_1.data != nullptr && img_2.data != nullptr);
-  j++ ; 
   cout <<"Doing Feature match:" <<fn3[j-1] << ", " << fn3[j] << endl;
+  j++ ; 
 
 // find features and match them
  find_feature_matches(img_1, img_2, keypoints_1, keypoints_2, matches);
@@ -119,7 +119,7 @@ while (lop<fn3.size()) {
   pointsTranslationVector = pointsTranslationVector + t ;
 
   cout << "Translation total =" << endl << pointsTranslationVector << endl;
-  lop++;
+ // lop++;
  }
   return 0;
 }
@@ -165,7 +165,8 @@ void find_feature_matches(
 //it is considered that the matching is wrong. But sometimes the minimum distance will be very small, 
 //and an empirical value of 30 is set as the lower limit.
   for (int i = 0; i < descriptors_1.rows; i++) {
-    if (match[i].distance <= max(min_dist, 20.0)) {
+//  if (match[i].distance <= max(min_dist, 20.0)) {
+    if (match[i].distance <= max(min_dist*2, 30.0)) {
       matches.push_back(match[i]);
     }
   }
@@ -189,7 +190,7 @@ Point2d pixel2cam(const Point2d &p, const Mat &K) {
 
 //---------------------------------------------------generate Depth Map---------------//
 
-Mat generateDepthMap(void) {
+Mat generateDepthMap(int j) {
 
   float fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157; // dim in pixels
   float b = 0.573; // in meters
@@ -199,10 +200,10 @@ Mat generateDepthMap(void) {
 
    Mat imgDp_1, imgDp_2;
    
-    imgDp_1 = imread(fn0[f], CV_LOAD_IMAGE_GRAYSCALE);
-    imgDp_2 = imread(fn1[f], CV_LOAD_IMAGE_GRAYSCALE);
+    imgDp_1 = imread(fn0[j], CV_LOAD_IMAGE_GRAYSCALE);
+    imgDp_2 = imread(fn1[j], CV_LOAD_IMAGE_GRAYSCALE);
     assert(imgDp_1.data != nullptr && imgDp_2.data != nullptr);
-    f++ ;
+
     cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create( 0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // tested parameters
     
     cv::Mat disparity_sgbm, disparity, disparityMap;
