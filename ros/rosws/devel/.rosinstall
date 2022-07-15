@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/schen/proj/Contract/vSLAM/visual_odometry_points/ros/rosws/devel/setup.sh

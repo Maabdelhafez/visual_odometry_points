@@ -1,0 +1,8 @@
+prefix=/home/schen/proj/Contract/vSLAM/visual_odometry_points/ros/rosws/devel
+
+Name: mslam_ros
+Description: Description of mslam_ros
+Version: 1.3.2
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
