@@ -72,6 +72,10 @@ int main(int argc, char **argv) {
 
    cv::glob("seq/image_0", fn3);
   int j=1; // frm num
+  //--- world transform
+  Mat Rw = (Mat_<double>(3, 3) << 1, 0, 0,  0, 1, 0, 0, 0, 1);
+  Mat tw = (Mat_<double>(3, 1) << 0,0,0);
+  //-----
   while (j<fn3.size()) {
     std::vector<KeyPoint> keypoints_1;
     std::vector<KeyPoint> keypoints_2;
@@ -134,12 +138,24 @@ int main(int argc, char **argv) {
 
     //solvePnPRansac(pts_3d, pts_2d, K, D, r, t, false, 100, 8.0, 0.99); 
     cout << "Outliers:(" << ot.rows << ","<< ot.cols << ") of " << pts_2d.size()<<endl;
-    cout << "Relative motion: r=" << r << ", ";
+    cout << "Solved motion: r=" << r << ", ";
     cout << "t=" << t << endl; // delt t, delta R
     cv::Rodrigues(r, R); // r is in the form of a rotation vector, converted to a matrix using the Rodrigues formula 
-    // Possible: T = [ R' | t'] = [ RT | -Rt]
+    // T = [ R' | t'] = [ RT | -RT*t]
     // t1 = -R.transpose()*t;
     // R1 = R.transpose();
+    //---- inverse transform to relative motion
+    Mat dRw; transpose(R, dRw);
+    Mat dt = -dRw*t;
+    //---- to world transform
+    Rw = Rw * dRw;
+    tw = tw + dt;
+    cv::Mat rw(3,1,cv::DataType<double>::type);
+    cv::Rodrigues(Rw, rw);
+    Mat ew = rw*180.0/M_PI; // to degree
+    cout << "World pose: ew=" << ew << ", tw=" << tw << endl; 
+
+    //--------------
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
   
