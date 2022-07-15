@@ -24,6 +24,7 @@
 #include <vector>
 #include <string>
 #include <iomanip>
+#include <fstream>
 //#include <pangolin/pangolin.h>
 
 
@@ -75,6 +76,10 @@ int main(int argc, char **argv) {
   //--- world transform
   Mat Rw = (Mat_<double>(3, 3) << 1, 0, 0,  0, 1, 0, 0, 0, 1);
   Mat tw = (Mat_<double>(3, 1) << 0,0,0);
+  //---- open log file for world pose
+  ofstream ofs;
+  ofs.open("pose_log.txt");
+
   //-----
   while (j<fn3.size()) {
     std::vector<KeyPoint> keypoints_1;
@@ -154,7 +159,11 @@ int main(int argc, char **argv) {
     cv::Rodrigues(Rw, rw);
     Mat ew = rw*180.0/M_PI; // to degree
     cout << "World pose: ew=" << ew << ", tw=" << tw << endl; 
-
+    //---- save to log
+    Mat ew1, tw1; 
+    transpose(ew, ew1);
+    transpose(tw, tw1); 
+    ofs << ew1 << ",   " << tw1 << endl; 
     //--------------
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
@@ -179,7 +188,7 @@ int main(int argc, char **argv) {
    // resizeWindow("dbg1", 1200,400);
 
   }
-  
+  ofs.close();
   return 0;
 }
 //-------------
