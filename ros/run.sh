@@ -1,4 +1,4 @@
 
 source env.sh
 ./build.sh
-roslaunch mslam_ros test.launch 
+roslaunch mvslam_ros test.launch 
