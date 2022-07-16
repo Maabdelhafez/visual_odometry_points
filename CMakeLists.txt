@@ -10,8 +10,9 @@ include_directories( ${OpenCV_DIRS} )
 include_directories( /usr/include/eigen3/ )
 include_directories( ${Sophus_INCLUDE_DIRS} )
 include_directories( dep/sophus/include )
+include_directories( ./mvslam )
 
-FILE(GLOB  SRC_ALL *.cpp)
+FILE(GLOB  SRC_ALL mvslam/*.cpp)
 add_executable(vo ${SRC_ALL})
 target_link_libraries(vo   ${OpenCV_LIBRARIES} ${Sophus_LIBRARIES})
 
