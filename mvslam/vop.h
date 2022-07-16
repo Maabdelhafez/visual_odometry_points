@@ -22,7 +22,7 @@
 #include <g2o/solvers/dense/linear_solver_dense.h>
 */
 //#include <sophus/se3.hpp>
-#include <sophus/se3.h>
+//#include <sophus/se3.h>
 #include <chrono>
 //#include <opencv2/imgcodecs/legacy/constants_c.h>
 #include <unistd.h>
