@@ -1,44 +1,4 @@
-#include <iostream>
-#include <opencv2/core/core.hpp>
-#include <opencv2/features2d/features2d.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
-#include <opencv2/imgproc.hpp>
-#include<opencv2/opencv.hpp>
-#include <Eigen/Core>
-/*
-#include <g2o/core/base_vertex.h>
-#include <g2o/core/base_unary_edge.h>
-#include <g2o/core/sparse_optimizer.h>
-#include <g2o/core/block_solver.h>
-#include <g2o/core/solver.h>
-#include <g2o/core/optimization_algorithm_gauss_newton.h>
-#include <g2o/solvers/dense/linear_solver_dense.h>
-*/
-//#include <sophus/se3.hpp>
-#include <sophus/se3.h>
-#include <chrono>
-//#include <opencv2/imgcodecs/legacy/constants_c.h>
-#include <unistd.h>
-#include <vector>
-#include <string>
-#include <iomanip>
-#include <fstream>
-//#include <pangolin/pangolin.h>
-
-
-using namespace std;
-using namespace cv;
-using namespace Eigen;
-
-
-std::vector<String> fn0;
-std::vector<String> fn1;
-std::vector<String> fn3;
-
-Vec3f  pointsTranslationVector = 0.0  ;
-
+#include "vop.h"
 
 
 //int f= 1 ; int j = 1, lop=0; 
@@ -66,10 +26,18 @@ Mat generateDepthMap(int j);
 
 
 //----------------------------------------------------------MAIN-------------------------------------------------//
+namespace{
 
 
+  std::vector<String> fn0;
+  std::vector<String> fn1;
+  std::vector<String> fn3;
 
-int main(int argc, char **argv) {
+}
+
+
+extern void run_vop()
+{
 
    cv::glob("seq/image_0", fn3);
   int j=1; // frm num
@@ -170,7 +138,7 @@ int main(int argc, char **argv) {
   
     //pointsTranslationVector = pointsTranslationVector + t ;
 
-    cout << "Translation total =" << endl << pointsTranslationVector << endl;
+//    cout << "Translation total =" << endl << pointsTranslationVector << endl;
   // lop++;
     //---- draw depth pnts
     Mat imd = img_2;
@@ -189,7 +157,6 @@ int main(int argc, char **argv) {
 
   }
   ofs.close();
-  return 0;
 }
 //-------------
 void find_feature_matches(

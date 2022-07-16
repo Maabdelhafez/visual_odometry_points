@@ -3,6 +3,7 @@
     
     },
     "files.associations": {
-        "core": "cpp"
+        "core": "cpp",
+        "fstream": "cpp"
     }
 }
