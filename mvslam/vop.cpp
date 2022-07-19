@@ -27,12 +27,12 @@ Mat generateDepthMap(int j);
 
 //----------------------------------------------------------MAIN-------------------------------------------------//
 namespace{
-
-
+  
+  //----
   std::vector<String> fn0;
   std::vector<String> fn1;
   std::vector<String> fn3;
-
+  
 }
 
 
@@ -47,6 +47,8 @@ extern void run_vop()
   //---- open log file for world pose
   ofstream ofs;
   ofs.open("pose_log.txt");
+  ofstream ofs2;
+  ofs2.open("Tw.txt"); 
 
   //-----
   while (j<fn3.size()) {
@@ -132,6 +134,15 @@ extern void run_vop()
     transpose(ew, ew1);
     transpose(tw, tw1); 
     ofs << ew1 << ",   " << tw1 << endl; 
+    //---- save for kitti evaluation
+    cv::Mat_<double> Tw(3,4);
+    for(int i=0;i<3;i++)
+      Tw.col(i) = Rw.col(i);
+    Tw.col(3) = tw;
+    for(int i=0; i<Tw.rows; i++)
+      for(int j=0; j<Tw.cols; j++)
+        ofs2 << Tw.at<double>(i, j) << " ";
+    ofs2 << endl;
     //--------------
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
