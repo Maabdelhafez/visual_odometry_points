@@ -1,7 +1,7 @@
 project(test)
 cmake_minimum_required(VERSION 3.4)
 
-SET(CMAKE_CXX_STANDARD 14)
+SET(CMAKE_CXX_STANDARD 17)
 
 find_package(OpenCV REQUIRED)
 #find_package( Sophus REQUIRED )

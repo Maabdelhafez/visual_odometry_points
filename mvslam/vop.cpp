@@ -1,6 +1,6 @@
 #include "vop.h"
-
-
+#include <filesystem>
+#include <sstream>
 //int f= 1 ; int j = 1, lop=0; 
 
 
@@ -32,9 +32,38 @@ namespace{
   std::vector<String> fn0;
   std::vector<String> fn1;
   std::vector<String> fn3;
-  
+  bool enShow_ = false;
 }
-
+//---------------------
+string img_frm_idx(const string& s1)
+{
+  string s= std::filesystem::path(s1).stem();
+  int i=0;
+  for(;i<s.length();i++)
+    if(s[i]!='0') break;
+  s = s.substr(i);
+  return s;
+}
+//--------
+string kitti_line(Mat& Rw, Mat& tw, 
+            const string& sfrm)
+{
+  stringstream s;
+  s.precision(7);
+  s << std::fixed;
+  //---- save for kitti evaluation
+    s << img_frm_idx(sfrm) << " "; // current frame index
+    cv::Mat_<double> Tw(3,4);
+    for(int i=0;i<3;i++)
+      Tw.col(i) = Rw.col(i);
+    Tw.col(3) = tw;
+    for(int i=0; i<Tw.rows; i++)
+      for(int j=0; j<Tw.cols; j++)
+        s << Tw.at<double>(i, j) << " ";
+    s << endl;
+    return s.str();
+}
+//------------------------
 
 extern void run_vop()
 {
@@ -44,11 +73,14 @@ extern void run_vop()
   //--- world transform
   Mat Rw = (Mat_<double>(3, 3) << 1, 0, 0,  0, 1, 0, 0, 0, 1);
   Mat tw = (Mat_<double>(3, 1) << 0,0,0);
+
   //---- open log file for world pose
   ofstream ofs;
   ofs.open("pose_log.txt");
   ofstream ofs2;
   ofs2.open("Tw.txt"); 
+  
+  //ofs2 << kitti_line(Rw, tw);
 
   //-----
   while (j<fn3.size()) {
@@ -135,14 +167,8 @@ extern void run_vop()
     transpose(tw, tw1); 
     ofs << ew1 << ",   " << tw1 << endl; 
     //---- save for kitti evaluation
-    cv::Mat_<double> Tw(3,4);
-    for(int i=0;i<3;i++)
-      Tw.col(i) = Rw.col(i);
-    Tw.col(3) = tw;
-    for(int i=0; i<Tw.rows; i++)
-      for(int j=0; j<Tw.cols; j++)
-        ofs2 << Tw.at<double>(i, j) << " ";
-    ofs2 << endl;
+    ofs2 << kitti_line(Rw, tw, fn3[j]);
+
     //--------------
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
@@ -162,8 +188,10 @@ extern void run_vop()
       cv::putText(imd, s.str(), q,FONT_HERSHEY_COMPLEX, 1,{255,0,0}, 2);//Putting the text in the matrix//
     }
     //cvtcolor(imd,cv::COLOR_BGR2GRAY);
-    cv::namedWindow("dbg1", cv::WINDOW_KEEPRATIO);
-    imshow("dbg1", imd);
+    if(enShow_) {
+      cv::namedWindow("dbg1", cv::WINDOW_KEEPRATIO);
+     imshow("dbg1", imd);
+  }
    // resizeWindow("dbg1", 1200,400);
 
   }
@@ -218,10 +246,12 @@ void find_feature_matches(
   }
   Mat img_match;
   drawMatches(img_1, keypoints_1, img_2, keypoints_2, matches, img_match);
-  cv::namedWindow("Matched 2D ORB Features", cv::WINDOW_KEEPRATIO);
-  imshow("Matched 2D ORB Features", img_match);
-  resizeWindow("Matched 2D ORB Features", 1800,400);
-  waitKey(35);
+  if(enShow_) {
+        cv::namedWindow("Matched 2D ORB Features", cv::WINDOW_KEEPRATIO);
+        imshow("Matched 2D ORB Features", img_match);
+      resizeWindow("Matched 2D ORB Features", 1800,400);
+      waitKey(35);
+  }
 
   
 }
@@ -258,12 +288,14 @@ Mat generateDepthMap(int j) {
     disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);
     disparityMap = disparity/96.0; // 16.0 ;
  //   disparityMap = disparity/40.0; // 16.0 ;
-  cv::namedWindow("Disparity", cv::WINDOW_KEEPRATIO);
-  cv::imshow("Disparity", disparityMap );
-  cv::resizeWindow("Disparity", 800,300);
+    if(enShow_) {
 
+      cv::namedWindow("Disparity", cv::WINDOW_KEEPRATIO);
+      cv::imshow("Disparity", disparityMap );
+      cv::resizeWindow("Disparity", 800,300);
+      cv::waitKey(35);
+    }
 
-  cv::waitKey(35);
 
    
    Mat depthMap= disparity;
@@ -280,12 +312,13 @@ Mat generateDepthMap(int j) {
           }
         }
 
-  cv::namedWindow("Live depth Map", cv::WINDOW_KEEPRATIO);
- cv::imshow("Live depth Map", depthMap );
-  cv::resizeWindow("Live depth Map", 800,300);
+    if(enShow_) {
 
-
-   cv::waitKey(35);
+        cv::namedWindow("Live depth Map", cv::WINDOW_KEEPRATIO);
+      cv::imshow("Live depth Map", depthMap );
+        cv::resizeWindow("Live depth Map", 800,300);
+       cv::waitKey(35);
+  }
 return  depthMap; 
 }
 
