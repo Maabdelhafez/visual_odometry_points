@@ -32,8 +32,8 @@ namespace{
   std::vector<String> fn0;
   std::vector<String> fn1;
   std::vector<String> fn3;
-  bool enShow_ = true;
-  int stride_= 4;
+  bool enShow_ = false;
+  int stride_= 1;
 }
 //---------------------
 string img_frm_idx(const string& s1)
@@ -43,6 +43,9 @@ string img_frm_idx(const string& s1)
   for(;i<s.length();i++)
     if(s[i]!='0') break;
   s = s.substr(i);
+  if(s=="") 
+    s="0";
+
   return s;
 }
 //--------
@@ -50,14 +53,18 @@ string kitti_line(const Mat& Rw, const Mat& tw,
             const string& sfrm)
 {
   stringstream s;
-  s.precision(7);
+  s.precision(16);
   s << std::fixed;
+  cout << "Rw=" << Rw << endl;
+  cout << "tw=" << tw << endl;
   //---- save for kitti evaluation
     s << img_frm_idx(sfrm); // current frame index
+
     cv::Mat_<double> Tw(3,4);
     for(int i=0;i<3;i++)
-      Tw.col(i) = Rw.col(i);
-    Tw.col(3) = tw;
+      Rw.col(i).copyTo(Tw.col(i));
+    tw.copyTo(Tw.col(3));
+    cout << "Tw=" << Tw << endl;
     for(int i=0; i<Tw.rows; i++)
       for(int j=0; j<Tw.cols; j++)
         s << " " << Tw.at<double>(i, j);
@@ -82,13 +89,16 @@ extern void run_vop()
   ofstream ofs2;
   ofs2.open("Tw.txt"); 
   
-  //ofs2 << kitti_line(Rw, tw);
+  ofs2 << kitti_line(Rw, tw, fn3[0]);
 
   //-----
   int ic = stride_; // current frame
   while(ic<fn3.size()) 
   {
     int ip = ic - stride_; // previous frm
+    if(ic==24)
+      {int k=0;} // dbg
+    //----
     std::vector<KeyPoint> keypoints_1;
     std::vector<KeyPoint> keypoints_2;
     std::vector<DMatch> matches;
