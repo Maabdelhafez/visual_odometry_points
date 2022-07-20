@@ -32,7 +32,8 @@ namespace{
   std::vector<String> fn0;
   std::vector<String> fn1;
   std::vector<String> fn3;
-  bool enShow_ = false;
+  bool enShow_ = true;
+  int stride_= 4;
 }
 //---------------------
 string img_frm_idx(const string& s1)
@@ -45,23 +46,24 @@ string img_frm_idx(const string& s1)
   return s;
 }
 //--------
-string kitti_line(Mat& Rw, Mat& tw, 
+string kitti_line(const Mat& Rw, const Mat& tw, 
             const string& sfrm)
 {
   stringstream s;
   s.precision(7);
   s << std::fixed;
   //---- save for kitti evaluation
-    s << img_frm_idx(sfrm) << " "; // current frame index
+    s << img_frm_idx(sfrm); // current frame index
     cv::Mat_<double> Tw(3,4);
     for(int i=0;i<3;i++)
       Tw.col(i) = Rw.col(i);
     Tw.col(3) = tw;
     for(int i=0; i<Tw.rows; i++)
       for(int j=0; j<Tw.cols; j++)
-        s << Tw.at<double>(i, j) << " ";
+        s << " " << Tw.at<double>(i, j);
     s << endl;
-    return s.str();
+    string sr = s.str();
+    return sr;
 }
 //------------------------
 
@@ -69,7 +71,7 @@ extern void run_vop()
 {
 
    cv::glob("seq/image_0", fn3);
-  int j=1; // frm num
+
   //--- world transform
   Mat Rw = (Mat_<double>(3, 3) << 1, 0, 0,  0, 1, 0, 0, 0, 1);
   Mat tw = (Mat_<double>(3, 1) << 0,0,0);
@@ -83,21 +85,23 @@ extern void run_vop()
   //ofs2 << kitti_line(Rw, tw);
 
   //-----
-  while (j<fn3.size()) {
+  int ic = stride_; // current frame
+  while(ic<fn3.size()) 
+  {
+    int ip = ic - stride_; // previous frm
     std::vector<KeyPoint> keypoints_1;
     std::vector<KeyPoint> keypoints_2;
     std::vector<DMatch> matches;
-    cout << "gen depth map of frm:" << j-1 << endl;
-    Mat depthMap =  generateDepthMap(j-1);
+    cout << "gen depth map of frm:" << ip << endl;
+    Mat depthMap =  generateDepthMap(ip);
 
   //-- read the image
   
-    Mat img_1 = imread(fn3[j-1], CV_LOAD_IMAGE_GRAYSCALE);
-    Mat img_2 = imread(fn3[j], CV_LOAD_IMAGE_GRAYSCALE);
+    Mat img_1 = imread(fn3[ip], CV_LOAD_IMAGE_GRAYSCALE);
+    Mat img_2 = imread(fn3[ic], CV_LOAD_IMAGE_GRAYSCALE);
     assert(img_1.data != nullptr && img_2.data != nullptr);
-    cout <<"Doing Feature match:" <<fn3[j-1] << ", " << fn3[j] << endl;
-    cout << "Feature match frm:" << j-1 <<", " << j << endl;
-    j++;
+    cout <<"Doing Feature match:" <<fn3[ip] << ", " << fn3[ic] << endl;
+    cout << "Feature match frm:" << ip <<", " << ic << endl;
     // find features and match them
     find_feature_matches(img_1, img_2, keypoints_1, keypoints_2, matches);
     Mat K = (Mat_<double>(3, 3) << 718.856, 0, 607.1928, 0, 718.856, 185.2157, 0, 0, 1);
@@ -127,7 +131,10 @@ extern void run_vop()
     int N = pts_3d.size();
     cout << "Found good depth: " << N << endl;
     if(N<6)
+    {
+      ic += stride_;
       continue;
+    }
 
     Mat R;
 //    Vec3f t ;
@@ -167,7 +174,7 @@ extern void run_vop()
     transpose(tw, tw1); 
     ofs << ew1 << ",   " << tw1 << endl; 
     //---- save for kitti evaluation
-    ofs2 << kitti_line(Rw, tw, fn3[j]);
+    ofs2 << kitti_line(Rw, tw, fn3[ic]);
 
     //--------------
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
@@ -187,13 +194,13 @@ extern void run_vop()
       s << std::setprecision(2)<<d;
       cv::putText(imd, s.str(), q,FONT_HERSHEY_COMPLEX, 1,{255,0,0}, 2);//Putting the text in the matrix//
     }
-    //cvtcolor(imd,cv::COLOR_BGR2GRAY);
-    if(enShow_) {
-      cv::namedWindow("dbg1", cv::WINDOW_KEEPRATIO);
-     imshow("dbg1", imd);
-  }
-   // resizeWindow("dbg1", 1200,400);
-
+      //cvtcolor(imd,cv::COLOR_BGR2GRAY);
+      if(enShow_) {
+        cv::namedWindow("dbg1", cv::WINDOW_KEEPRATIO);
+      imshow("dbg1", imd);
+    }
+    // resizeWindow("dbg1", 1200,400);
+    ic += stride_;
   }
   ofs.close();
 }
