@@ -32,7 +32,7 @@ namespace{
   std::vector<String> fn0;
   std::vector<String> fn1;
   std::vector<String> fn3;
-  bool enShow_ = false;
+  bool enShow_ = true;
   int stride_= 1;
 }
 //---------------------
@@ -103,7 +103,7 @@ extern void run_vop()
     std::vector<KeyPoint> keypoints_2;
     std::vector<DMatch> matches;
     cout << "gen depth map of frm:" << ip << endl;
-    Mat depthMap =  generateDepthMap(ip);
+    Mat disparity =  generateDepthMap(ip);
 
   //-- read the image
   
@@ -125,11 +125,13 @@ extern void run_vop()
       auto& kp2 = keypoints_2[m.trainIdx].pt;
       auto& kpd = kp1; // ori
     //  auto& kpd = kp2;
-      ushort d = depthMap.ptr<unsigned short>(int(kpd.y))[int(kpd.x)]; 
+      float fx = 718.856, b = 0.573; // pixels and  meters
+      float depth = ( fx * b ) / (disparity.at<float>(keypoints_1[m.queryIdx].pt.y , keypoints_1[m.queryIdx].pt.x));
       
-      if (d == 0)   // bad depth
+      if (depth <= 8 || depth > 200)
         continue;
-      float dd = d / 5000.0; 
+
+      float dd = depth / 1.0; 
       cout << dd << ", "; 
       dds.push_back(dd);
       Point2d p1 = pixel2cam(kp1, K);
@@ -195,14 +197,16 @@ extern void run_vop()
 //    cout << "Translation total =" << endl << pointsTranslationVector << endl;
   // lop++;
     //---- draw depth pnts
-    Mat imd = img_2;
+    Mat imd = img_1;
+    cv::cvtColor(imd, imd, cv::COLOR_GRAY2BGR);
+
     for(int i=0;i<dds.size();i++)
     {
       Point2f q = pts_2d[i];
       float d = dds[i];
       stringstream s;
       s << std::setprecision(2)<<d;
-      cv::putText(imd, s.str(), q,FONT_HERSHEY_COMPLEX, 1,{255,0,0}, 2);//Putting the text in the matrix//
+      cv::putText(imd, s.str(), q,FONT_HERSHEY_COMPLEX, 1,{255,0,255}, 2);//Putting the text in the matrix//
     }
       //cvtcolor(imd,cv::COLOR_BGR2GRAY);
       if(enShow_) {
@@ -223,8 +227,8 @@ void find_feature_matches(
 
   Mat descriptors_1, descriptors_2;
 
-  Ptr<FeatureDetector> detector = ORB::create();
-  Ptr<DescriptorExtractor> descriptor = ORB::create();
+  Ptr<FeatureDetector> detector = ORB::create(3500);
+  Ptr<DescriptorExtractor> descriptor = ORB::create(3500);
   
   Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
   
@@ -285,57 +289,32 @@ Point2d pixel2cam(const Point2d &p, const Mat &K) {
 
 Mat generateDepthMap(int j) {
 
-  float fx = 718.856, fy = 718.856, cx = 607.1928, cy = 185.2157; // dim in pixels
-  float b = 0.573; // in meters
-
+ 
   cv::glob("seq/image_0", fn0);
   cv::glob("seq/image_1", fn1);
 
   cout <<"Depth map of frm :" << j << ", with" << fn0[j] << ", " << fn1[j] << endl;
    Mat imgDp_1, imgDp_2;
    
-    imgDp_1 = imread(fn0[j], CV_LOAD_IMAGE_GRAYSCALE);
-    imgDp_2 = imread(fn1[j], CV_LOAD_IMAGE_GRAYSCALE);
-    assert(imgDp_1.data != nullptr && imgDp_2.data != nullptr);
+  imgDp_1 = imread(fn0[j], CV_LOAD_IMAGE_GRAYSCALE);
+  imgDp_2 = imread(fn1[j], CV_LOAD_IMAGE_GRAYSCALE);
+  assert(imgDp_1.data != nullptr && imgDp_2.data != nullptr);
 
-    cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create( 0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // tested parameters
-    
-    cv::Mat disparity_sgbm, disparity, disparityMap;
-    sgbm->compute(imgDp_1, imgDp_2, disparity_sgbm);
-    disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);
-    disparityMap = disparity/96.0; // 16.0 ;
- //   disparityMap = disparity/40.0; // 16.0 ;
-    if(enShow_) {
+  cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create( 0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // tested parameters
+  
+  cv::Mat disparity_sgbm, disparity, disparityMap;
+  sgbm->compute(imgDp_1, imgDp_2, disparity_sgbm);
+  disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);
+  disparityMap = disparity/96.0; // 16.0 ;
 
-      cv::namedWindow("Disparity", cv::WINDOW_KEEPRATIO);
-      cv::imshow("Disparity", disparityMap );
-      cv::resizeWindow("Disparity", 800,300);
-      cv::waitKey(35);
-    }
+  if(enShow_) {
 
-
-   
-   Mat depthMap= disparity;
-
-
-   
-    for (int i = 0; i <depthMap.rows; i++)
-        {
-        for (int j = 0; j <depthMap.cols; j++)
-          {
-               if (depthMap.at<float>(i, j) <= 10.0 || depthMap.at<float>(i, j) >= 96.0) continue;
-               double depth = ((fx*b)) / (depthMap.at<float>(i,j)) ;
-               depthMap.at<float>(i,j) = depth; 
-          }
-        }
-
-    if(enShow_) {
-
-        cv::namedWindow("Live depth Map", cv::WINDOW_KEEPRATIO);
-      cv::imshow("Live depth Map", depthMap );
-        cv::resizeWindow("Live depth Map", 800,300);
-       cv::waitKey(35);
+    cv::namedWindow("Disparity", cv::WINDOW_KEEPRATIO);
+    cv::imshow("Disparity", disparityMap );
+    cv::resizeWindow("Disparity", 800,300);
+    cv::waitKey(35);
   }
-return  depthMap; 
+
+  return  disparity; 
 }
 

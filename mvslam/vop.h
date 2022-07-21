@@ -10,6 +10,7 @@
 #include<opencv2/opencv.hpp>
 #include <Eigen/Core>
 
+
 #include "vop.h"
 
 /*
@@ -24,7 +25,7 @@
 //#include <sophus/se3.hpp>
 //#include <sophus/se3.h>
 #include <chrono>
-//#include <opencv2/imgcodecs/legacy/constants_c.h>
+#include <opencv2/imgcodecs/legacy/constants_c.h>
 #include <unistd.h>
 #include <vector>
 #include <string>
