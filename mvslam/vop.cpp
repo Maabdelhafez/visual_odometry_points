@@ -32,7 +32,7 @@ namespace{
   std::vector<String> fn0;
   std::vector<String> fn1;
   std::vector<String> fn3;
-  bool enShow_ = true;
+  bool enShow_ = false;
   int stride_= 1;
 }
 //---------------------
@@ -174,8 +174,8 @@ extern void run_vop()
     Mat dRw; transpose(R, dRw);
     Mat dt = -dRw*t;
     //---- to world transform
+    tw = tw + Rw*dt;
     Rw = Rw * dRw;
-    tw = tw + dt;
     cv::Mat rw(3,1,cv::DataType<double>::type);
     cv::Rodrigues(Rw, rw);
     Mat ew = rw*180.0/M_PI; // to degree
