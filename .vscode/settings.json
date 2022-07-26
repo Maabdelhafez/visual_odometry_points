@@ -70,5 +70,8 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp"
+    },
+    "cmake.configureEnvironment": {
+        "OpenCV_DIR": "/opt/dep/opencv4/lib/cmake/opencv4"
     }
 }

@@ -32,7 +32,7 @@ namespace{
   std::vector<String> fn0;
   std::vector<String> fn1;
   std::vector<String> fn3;
-  bool enShow_ = false;
+  bool enShow_ = true;
   int stride_= 1;
 }
 //---------------------
@@ -300,8 +300,8 @@ Mat generateDepthMap(int j) {
   imgDp_2 = imread(fn1[j], CV_LOAD_IMAGE_GRAYSCALE);
   assert(imgDp_1.data != nullptr && imgDp_2.data != nullptr);
 
-  cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create( 0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // tested parameters
-  
+  cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32); // tested parameters
+
   cv::Mat disparity_sgbm, disparity, disparityMap;
   sgbm->compute(imgDp_1, imgDp_2, disparity_sgbm);
   disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);
