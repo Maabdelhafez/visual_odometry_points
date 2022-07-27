@@ -32,7 +32,7 @@ namespace{
   std::vector<String> fn0;
   std::vector<String> fn1;
   std::vector<String> fn3;
-  bool enShow_ = true;
+  bool enShow_ = false;
   int stride_= 1;
 }
 //---------------------
@@ -84,11 +84,11 @@ extern void run_vop()
   Mat tw = (Mat_<double>(3, 1) << 0,0,0);
 
   //---- open log file for world pose
-  ofstream ofs;
+  ofstream ofs, ofs2, ofsP;
   ofs.open("pose_log.txt");
-  ofstream ofs2;
+  ofsP.open("pnt.xyz");
+
   ofs2.open("Tw.txt"); 
-  
   ofs2 << kitti_line(Rw, tw, fn3[0]);
 
   //-----
@@ -119,7 +119,7 @@ extern void run_vop()
     vector<Point2f> pts_2d;
     vector<double> dds;
     cout << "Found matches:" << matches.size() << endl;  
-    cout << "depth:";
+   // cout << "depth:";
     for (DMatch m:matches) {
       auto& kp1 = keypoints_1[m.queryIdx].pt;
       auto& kp2 = keypoints_2[m.trainIdx].pt;
@@ -132,10 +132,12 @@ extern void run_vop()
         continue;
 
       float dd = depth / 1.0; 
-      cout << dd << ", "; 
+   //   cout << dd << ", "; 
       dds.push_back(dd);
       Point2d p1 = pixel2cam(kp1, K);
-      pts_3d.push_back(Point3f((p1.x) * dd, (p1.y) * dd, dd));
+      //---- Point at cam frame(previous frame).
+      Point3f Pc(p1.x * dd, p1.y* dd, dd); 
+      pts_3d.push_back(Pc);
       pts_2d.push_back(kp2);
     }
     cout << endl;
@@ -163,7 +165,7 @@ extern void run_vop()
     cv::Mat D;
 
     //solvePnPRansac(pts_3d, pts_2d, K, D, r, t, false, 100, 8.0, 0.99); 
-    cout << "Outliers:(" << ot.rows << ","<< ot.cols << ") of " << pts_2d.size()<<endl;
+ //   cout << "Outliers:(" << ot.rows << ","<< ot.cols << ") of " << pts_2d.size()<<endl;
     cout << "Solved motion: r=" << r << ", ";
     cout << "t=" << t << endl; // delt t, delta R
     cv::Rodrigues(r, R); // r is in the form of a rotation vector, converted to a matrix using the Rodrigues formula 
@@ -173,7 +175,16 @@ extern void run_vop()
     //---- inverse transform to relative motion
     Mat dRw; transpose(R, dRw);
     Mat dt = -dRw*t;
-    //---- to world transform
+    //---- Generate point cloud
+    for(auto& Pc : pts_3d)
+    {
+      Mat P = (Mat_<double>(3, 1) << Pc.x, Pc.y, Pc.z);
+      Mat Pw = Rw*P + tw;
+      Vec3d p = Pw;
+      ofsP << p(0) << " " << p(1) << " " << p(2) << endl;      
+    }
+
+    //---- Update world transform
     tw = tw + Rw*dt;
     Rw = Rw * dRw;
     cv::Mat rw(3,1,cv::DataType<double>::type);
@@ -187,6 +198,7 @@ extern void run_vop()
     ofs << ew1 << ",   " << tw1 << endl; 
     //---- save for kitti evaluation
     ofs2 << kitti_line(Rw, tw, fn3[ic]);
+
 
     //--------------
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
@@ -217,6 +229,8 @@ extern void run_vop()
     ic += stride_;
   }
   ofs.close();
+  ofs2.close();
+  ofsP.close();
 }
 //-------------
 void find_feature_matches(
