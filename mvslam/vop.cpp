@@ -34,6 +34,8 @@ namespace{
   std::vector<String> fn3;
   bool enShow_ = false;
   int stride_= 1;
+  double pnt_z_TH_ = 20;
+  int N_features = 1500;
 }
 //---------------------
 string img_frm_idx(const string& s1)
@@ -158,10 +160,11 @@ extern void run_vop()
 
   cv::Mat r(3,1,cv::DataType<double>::type);
   cv::Mat t(3,1,cv::DataType<double>::type);
- 
-  cv::solvePnPRansac(pts_3d, pts_2d, K, Mat(), r, t);
- 
-    Mat ot; // outliers
+  Mat inlrs;
+  cv::solvePnPRansac(pts_3d, pts_2d, K, Mat(), r, t, inlrs);
+  int Ni = inlrs.rows;
+  cout << "Inliers : " << Ni << " of " << N << endl;
+
     cv::Mat D;
 
     //solvePnPRansac(pts_3d, pts_2d, K, D, r, t, false, 100, 8.0, 0.99); 
@@ -176,12 +179,27 @@ extern void run_vop()
     Mat dRw; transpose(R, dRw);
     Mat dt = -dRw*t;
     //---- Generate point cloud
+    /*
     for(auto& Pc : pts_3d)
     {
       Mat P = (Mat_<double>(3, 1) << Pc.x, Pc.y, Pc.z);
       Mat Pw = Rw*P + tw;
       Vec3d p = Pw;
       ofsP << p(0) << " " << p(1) << " " << p(2) << endl;      
+    }
+    */
+    // ref : https://answers.opencv.org/question/196562/solvepnpransac-getting-inliers-from-the-2d-and-3d-points/
+    for (int i = 0; i < inlrs.rows; i++)
+    {
+        int k = inlrs.at<int>(i, 0);
+        cv::Point3f Pc = pts_3d[k];
+        if(Pc.z > pnt_z_TH_) continue;
+        Mat P = (Mat_<double>(3, 1) << Pc.x, Pc.y, Pc.z);
+        Mat Pw = Rw*P + tw;
+        Vec3d p = Pw;
+        ofsP << p(0) << " " << p(1) << " " << p(2) << endl;      
+    
+
     }
 
     //---- Update world transform
@@ -240,9 +258,9 @@ void find_feature_matches(
   std::vector<DMatch> &matches) {
 
   Mat descriptors_1, descriptors_2;
-
-  Ptr<FeatureDetector> detector = ORB::create(3500);
-  Ptr<DescriptorExtractor> descriptor = ORB::create(3500);
+  int Nf = N_features;
+  Ptr<FeatureDetector> detector = ORB::create(Nf);
+  Ptr<DescriptorExtractor> descriptor = ORB::create(Nf);
   
   Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
   

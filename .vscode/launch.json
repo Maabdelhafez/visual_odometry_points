@@ -13,8 +13,10 @@
             "cwd": "${workspaceFolder}/rundir/",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
+            "osx": {"MIMode": "lldb"},
+            "linux": {"MIMode": "gdb"},      
+    
+                "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
